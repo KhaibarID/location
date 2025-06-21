@@ -8,7 +8,7 @@ import (
 )
 
 type SubDistrictRepository interface {
-	All(district, q string, page, size int) (error, []*domain.SubDistrict)
+	All(district, q string, page, size int) ([]*domain.SubDistrict, error)
 	FindByCode(code string) (*domain.SubDistrict, error)
 	Save(d *domain.SubDistrict) error
 }
@@ -17,7 +17,7 @@ type subDistrictServiceService struct {
 	col *mgo.Collection
 }
 
-func (p subDistrictServiceService) All(district, q string, page, size int) (error, []*domain.SubDistrict) {
+func (p subDistrictServiceService) All(district, q string, page, size int) ([]*domain.SubDistrict, error) {
 	var items []*domain.SubDistrict
 	err := p.col.Find(bson.M{
 		"name": bson.RegEx{Pattern: q + ".*", Options: "i"},
@@ -26,9 +26,9 @@ func (p subDistrictServiceService) All(district, q string, page, size int) (erro
 		Skip((page - 1) * size).Limit(size).
 		All(&items)
 	if len(items) < 1 {
-		return err, []*domain.SubDistrict{}
+		return []*domain.SubDistrict{}, err
 	}
-	return err, items
+	return items, err
 }
 
 func (p subDistrictServiceService) FindByCode(code string) (*domain.SubDistrict, error) {
@@ -42,6 +42,6 @@ func (p subDistrictServiceService) Save(d *domain.SubDistrict) error {
 	return err
 }
 
-func NewSubDistrictRepo(conn *configs.MongoDB) SubDistrictRepository {
-	return &subDistrictServiceService{conn.LOC.C("sub_districts")}
+func NewSubDistrictRepo(conn *configs.LocationDB) SubDistrictRepository {
+	return &subDistrictServiceService{conn.Database.C("sub_districts")}
 }

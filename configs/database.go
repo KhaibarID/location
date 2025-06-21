@@ -21,22 +21,11 @@ import (
  * at: 2019-01-31 09:25
 **/
 
-type MongoDB struct {
-	ATN *mgo.Database
-	OFF *mgo.Database
-	LOC *mgo.Database
+type LocationDB struct {
+	*mgo.Database
 }
 
-type MySQL struct {
-	ATN   *gorm.DB
-	ATNDB string
-	OFF   *gorm.DB
-	OFFDB string
-	OLD   *gorm.DB
-	OLDDB string
-}
-
-func createConnection(cfg conf.Config, conn string) (error, *gorm.DB) {
+func createConnection(cfg conf.Config, conn string) (*gorm.DB, error) {
 	dbUser := cfg.GetString(conn + `.user`)
 	dbPass := cfg.GetString(conn + `.pass`)
 	dbName := cfg.GetString(conn + `.database`)
@@ -65,55 +54,16 @@ func createConnection(cfg conf.Config, conn string) (error, *gorm.DB) {
 	})
 	if err != nil {
 		app.Logger("GORM Conn", err)
-		return err, nil
+		return nil, err
 	}
 
 	if cfg.GetString("env") == "dev" || cfg.GetString("env") == "staging" {
 		db = db.Debug()
 	}
-	return nil, db
+	return db, nil
 }
 
-func NewMySqlConnections(cfg conf.Config, atn, off, old *string) *MySQL {
-	var atnConn *gorm.DB = nil
-	var offConn *gorm.DB = nil
-	var oldConn *gorm.DB = nil
-	var err error = nil
-	var atnDB, offDB, oldDB string
-
-	if atn != nil {
-		err, atnConn = createConnection(cfg, *atn)
-		if err != nil {
-			app.Logger("Error Create Aksestani Connection", err.Error())
-		}
-		atnDB = cfg.GetString(*atn + ".database")
-	}
-	if off != nil {
-		err, offConn = createConnection(cfg, *off)
-		if err != nil {
-			app.Logger("Error Create Office Connection", err.Error())
-		}
-		offDB = cfg.GetString(*off + ".database")
-	}
-	if old != nil {
-		err, oldConn = createConnection(cfg, *old)
-		if err != nil {
-			app.Logger("Error Create Old Connection", err.Error())
-		}
-		oldDB = cfg.GetString(*old + ".database")
-	}
-
-	return &MySQL{
-		ATN:   atnConn,
-		ATNDB: atnDB,
-		OFF:   offConn,
-		OFFDB: offDB,
-		OLD:   oldConn,
-		OLDDB: oldDB,
-	}
-}
-
-func createMongoConnection(cfg conf.Config, conn string) (error, *mgo.Database) {
+func createMongoConnection(cfg conf.Config, conn string) (*mgo.Database, error) {
 	address := cfg.GetString(conn + `.address`)
 	user := cfg.GetString(conn + `.user`)
 	pass := cfg.GetString(conn + `.pass`)
@@ -126,7 +76,7 @@ func createMongoConnection(cfg conf.Config, conn string) (error, *mgo.Database) 
 	session, err := mgo.Dial(address + ":" + port)
 	if err != nil {
 		app.Logger("Mongodb Conn", err)
-		return err, nil
+		return nil, err
 	}
 	dbSessionAksestani := session.DB(database)
 	app.Logger("Mongo auth", auth)
@@ -134,39 +84,19 @@ func createMongoConnection(cfg conf.Config, conn string) (error, *mgo.Database) 
 		err := dbSessionAksestani.Login(user, pass)
 		if err != nil {
 			app.Logger("Mongodb Conn", err)
-			return err, nil
+			return nil, err
 		}
 	}
-	return nil, dbSessionAksestani
+	return dbSessionAksestani, nil
 }
 
-func NewMongoDBConnections(cfg conf.Config, atn, loc, off *string) *MongoDB {
-	var dbAtn *mgo.Database
+func NewLocationDatabase(cfg conf.Config, loc string) *LocationDB {
 	var dbLoc *mgo.Database
-	var dbOff *mgo.Database
 	var err error
 
-	if atn != nil {
-		err, dbAtn = createMongoConnection(cfg, *atn)
-		if err != nil {
-			fmt.Println("Error creating connection [Aksestani]", err)
-		}
+	dbLoc, err = createMongoConnection(cfg, loc)
+	if err != nil {
+		fmt.Println("Error creating connection [Location]", err)
 	}
-	if loc != nil {
-		err, dbLoc = createMongoConnection(cfg, *loc)
-		if err != nil {
-			fmt.Println("Error creating connection [Location]", err)
-		}
-	}
-	if off != nil {
-		err, dbOff = createMongoConnection(cfg, *off)
-		if err != nil {
-			fmt.Println("Error creating connection [Office]", err)
-		}
-	}
-	return &MongoDB{
-		ATN: dbAtn,
-		LOC: dbLoc,
-		OFF: dbOff,
-	}
+	return &LocationDB{dbLoc}
 }

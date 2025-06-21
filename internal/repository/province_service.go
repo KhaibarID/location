@@ -8,7 +8,7 @@ import (
 )
 
 type ProvinceRepository interface {
-	All(q string, page, size int) (error, []*domain.Province)
+	All(q string, page, size int) ([]*domain.Province, error)
 	FindByCode(code string) (*domain.Province, error)
 }
 
@@ -16,15 +16,15 @@ type provinceServiceService struct {
 	col *mgo.Collection
 }
 
-func (p provinceServiceService) All(q string, page, size int) (error, []*domain.Province) {
+func (p provinceServiceService) All(q string, page, size int) ([]*domain.Province, error) {
 	var items []*domain.Province
 	err := p.col.Find(bson.M{"name": bson.RegEx{Pattern: q + ".*", Options: "i"}}).
 		Skip((page - 1) * size).Limit(size).
 		All(&items)
 	if len(items) < 1 {
-		return err, []*domain.Province{}
+		return []*domain.Province{}, err
 	}
-	return err, items
+	return items, err
 }
 
 func (p provinceServiceService) FindByCode(code string) (*domain.Province, error) {
@@ -33,6 +33,6 @@ func (p provinceServiceService) FindByCode(code string) (*domain.Province, error
 	return province, err
 }
 
-func NewProvinceRepo(conn *configs.MongoDB) ProvinceRepository {
-	return &provinceServiceService{conn.LOC.C("provinces")}
+func NewProvinceRepo(conn *configs.LocationDB) ProvinceRepository {
+	return &provinceServiceService{conn.Database.C("provinces")}
 }

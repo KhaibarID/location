@@ -8,7 +8,7 @@ import (
 )
 
 type RegencyRepository interface {
-	All(provinceID, q string, page, size int) (error, []*domain.Regency)
+	All(provinceID, q string, page, size int) ([]*domain.Regency, error)
 	FindByCode(code string) (*domain.Regency, error)
 }
 
@@ -16,7 +16,7 @@ type regencyServiceService struct {
 	col *mgo.Collection
 }
 
-func (p regencyServiceService) All(provinceID, q string, page, size int) (error, []*domain.Regency) {
+func (p regencyServiceService) All(provinceID, q string, page, size int) ([]*domain.Regency, error) {
 	var items []*domain.Regency
 	err := p.col.Find(
 		bson.M{
@@ -26,9 +26,9 @@ func (p regencyServiceService) All(provinceID, q string, page, size int) (error,
 		Skip((page - 1) * size).Limit(size).
 		All(&items)
 	if len(items) < 1 {
-		return err, []*domain.Regency{}
+		return []*domain.Regency{}, err
 	}
-	return err, items
+	return items, err
 }
 
 func (p regencyServiceService) FindByCode(code string) (*domain.Regency, error) {
@@ -37,6 +37,6 @@ func (p regencyServiceService) FindByCode(code string) (*domain.Regency, error) 
 	return regency, err
 }
 
-func NewRegencyRepo(conn *configs.MongoDB) RegencyRepository {
-	return &regencyServiceService{conn.LOC.C("regency")}
+func NewRegencyRepo(conn *configs.LocationDB) RegencyRepository {
+	return &regencyServiceService{conn.Database.C("regency")}
 }

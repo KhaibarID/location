@@ -36,6 +36,6 @@ func (p districtServiceService) FindByCode(code string) (*domain.District, error
 	return dist, err
 }
 
-func NewDistrictRepo(conn *configs.MongoDB) DistrictRepository {
-	return &districtServiceService{conn.LOC.C("districts")}
+func NewDistrictRepo(conn *configs.LocationDB) DistrictRepository {
+	return &districtServiceService{conn.Database.C("districts")}
 }

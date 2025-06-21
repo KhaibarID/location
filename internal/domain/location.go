@@ -1,6 +1,8 @@
 package domain
 
 import (
+	"fmt"
+
 	"gopkg.in/mgo.v2/bson"
 )
 
@@ -36,4 +38,18 @@ type DetailAddress struct {
 	CodeDistrict    string `json:"code_district"`
 	SubDistrict     string `json:"sub_district"`
 	CodeSubDistrict string `json:"code_sub_district"`
+}
+
+func (l *Location) GetAddress() string {
+	if l == nil {
+		return ""
+	}
+	return fmt.Sprintf(
+		"%s, %s, %s, %s, %s",
+		l.SubDistrict,
+		l.District,
+		l.City,
+		l.Province,
+		l.PostCode,
+	)
 }

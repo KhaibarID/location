@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/mmuflih/envgo v0.0.0-20210223015203-5d112a34459c
 	gitlab.com/aksestani-lib/core v1.0.0
+	go.uber.org/dig v1.19.0
 	gopkg.in/mgo.v2 v2.0.0-20190816093944-a6b53ec6cb22
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/gorm v1.30.0

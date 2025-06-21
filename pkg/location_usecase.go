@@ -1,4 +1,4 @@
-package usecase
+package pkg
 
 import (
 	"errors"
@@ -8,7 +8,18 @@ import (
 	"github.com/khaibarid/location/internal/repository"
 )
 
-type LocationUsecase struct {
+/**
+ * Created by Muhammad Muflih Kholidin
+ * at 2020-10-01 22:19:43
+ * https://github.com/mmuflih
+ * muflic.24@gmail.com
+ **/
+
+type LocationUsecase interface {
+	GetByCode(code string) (*domain.Location, error)
+}
+
+type locUsecase struct {
 	districtRepo    repository.DistrictRepository
 	subDistrictRepo repository.SubDistrictRepository
 	regencyRepo     repository.RegencyRepository
@@ -20,8 +31,8 @@ func NewLocationUsecase(
 	subDistrictRepo repository.SubDistrictRepository,
 	regencyRepo repository.RegencyRepository,
 	provinceRepo repository.ProvinceRepository,
-) *LocationUsecase {
-	return &LocationUsecase{
+) LocationUsecase {
+	return &locUsecase{
 		districtRepo:    districtRepo,
 		subDistrictRepo: subDistrictRepo,
 		regencyRepo:     regencyRepo,
@@ -29,7 +40,7 @@ func NewLocationUsecase(
 	}
 }
 
-func (u *LocationUsecase) GetByCode(code string) (*domain.Location, error) {
+func (u *locUsecase) GetByCode(code string) (*domain.Location, error) {
 	loc := &domain.Location{}
 	codes := strings.Split(code, ".")
 	if len(codes) < 4 {
@@ -42,15 +53,16 @@ func (u *LocationUsecase) GetByCode(code string) (*domain.Location, error) {
 		loc.SubDistrictID = subDistrict.Code
 		loc.District = subDistrict.District
 		loc.Province = subDistrict.Province
+		loc.PostCode = subDistrict.PostalCode
 	}
 
-	district, _ := u.districtRepo.FindByCode(codes[2])
+	district, _ := u.districtRepo.FindByCode(codes[0] + "." + codes[1] + "." + codes[2])
 	if district != nil {
 		loc.District = district.Name
 		loc.DistrictID = district.Code
 	}
 
-	regency, _ := u.regencyRepo.FindByCode(codes[1])
+	regency, _ := u.regencyRepo.FindByCode(codes[0] + "." + codes[1])
 	if regency != nil {
 		loc.City = regency.Name
 		loc.CityID = regency.Code
